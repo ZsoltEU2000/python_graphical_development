@@ -1,6 +1,6 @@
 from PyQt5.QtCore import (QCoreApplication, QRect, QMetaObject, Qt)
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtGui import QIcon
 import backend
 import sys
 from exeptions import *
