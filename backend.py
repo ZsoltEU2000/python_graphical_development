@@ -1,5 +1,3 @@
-from datetime import datetime
-
 class List:
 
     def __init__(self, ls):
@@ -22,7 +20,6 @@ class List:
 
     def get_quartiles(self):
         self.__list.sort()
-        titles = ['Alsó kvartilis:', 'Középső kvartilis/Medián:', 'Felső kvartilis:']
         quartiles = [0.25, 0.50, 0.75]
         results = []
         for quartile in quartiles:
@@ -32,12 +29,10 @@ class List:
             else:
                 sp_leftover = sp % 1
                 sp = float(sp) - float(sp_leftover)
-                result = float(self.__list[int(sp-1)]) + float(sp_leftover) * (float(self.__list[int(sp)]) - float(self.__list[int(sp-1)]))
+                result = float(self.__list[int(sp-1)]) + float(sp_leftover) * (float(self.__list[int(sp)]) -
+                                                                               float(self.__list[int(sp-1)]))
                 results.append(result)
-        tmp = ''
-        for i in range(len(results)):
-            tmp += '{} {}\n\n'.format(str(titles[i]), str(results[i]))
-        return tmp
+        return results
 
     def get_dispersion(self):
         self.__list.sort()
