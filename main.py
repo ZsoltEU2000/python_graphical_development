@@ -179,8 +179,10 @@ class MainWindow(object):
                             is_in_list = True
                     if not is_in_list:
                         self.last_calculations_list.append(new_item)
-                    self.save_to_file()
-                    self.reload_data()
+                        self.save_to_file()
+                        self.reload_data()
+                    else:
+                        self.already_exists_error()
                 else:
                     raise EmptyListError
             except FileIsNotTxt:
@@ -206,46 +208,53 @@ class MainWindow(object):
     def add_list(self):
         input_list = self.input.text()[:-1]
         ls = []
-        try:
-            if input_list != '':
-                input_list = input_list.split(';')
-                for element in input_list:
-                    test_element = StringToFloat(element)
-                    if not test_element.is_float():
-                        unusable_element = element
-                        raise ElementIsNotUsable
+        if not self.add_list_button.isCheckable():
+            self.already_exists_error()
+        else:
+            try:
+                if input_list != '':
+                    input_list = input_list.split(';')
+                    for element in input_list:
+                        test_element = StringToFloat(element)
+                        if not test_element.is_float():
+                            unusable_element = element
+                            raise ElementIsNotUsable
+                        else:
+                            ls.append(float(element))
+                    if len(ls) != 0:
+                        new_item = backend.List(ls)
+                        is_in_list = False
+                        for element in self.last_calculations_list:
+                            if new_item.__str__() == element.__str__():
+                                is_in_list = True
+                        if not is_in_list:
+                            self.last_calculations_list.append(new_item)
+                            self.save_to_file()
+                            self.reload_data()
+                        else:
+                            self.already_exists_error()
                     else:
-                        ls.append(float(element))
-                if len(ls) != 0:
-                    new_item = backend.List(ls)
-                    is_in_list = False
-                    for element in self.last_calculations_list:
-                        if new_item.__str__() == element.__str__():
-                            is_in_list = True
-                    if not is_in_list:
-                        self.last_calculations_list.append(new_item)
-                    self.save_to_file()
-                    self.reload_data()
+                        raise EmptyListError
                 else:
                     raise EmptyListError
-            else:
-                raise EmptyListError
-        except ElementIsNotUsable:
-            message = QMessageBox()
-            message.setWindowTitle('Unusable item!')
-            message.setText("One of the inserted items ({}) can't be "
-                            "used so it must to be removed!".format(unusable_element))
-            message.setIcon(QMessageBox.Warning)
-            message.exec()
-        except EmptyListError:
-            message = QMessageBox()
-            message.setWindowTitle('No usable data found!')
-            message.setText("There weren't usable elements in the .txt file!")
-            message.setIcon(QMessageBox.Warning)
-            message.exec()
+            except ElementIsNotUsable:
+                message = QMessageBox()
+                message.setWindowTitle('Unusable item!')
+                message.setText("One of the inserted items ({}) can't be "
+                                "used so it must to be removed!".format(unusable_element))
+                message.setIcon(QMessageBox.Warning)
+                message.exec()
+            except EmptyListError:
+                message = QMessageBox()
+                message.setWindowTitle('No usable data found!')
+                message.setText("There weren't usable elements in the .txt file!")
+                message.setIcon(QMessageBox.Warning)
+                message.exec()
 
     def clear_list(self):
         self.input.clear()
+        self.input.setReadOnly(False)
+        self.add_list_button.setCheckable(True)
 
     def clear_result(self):
         self.result.clear()
@@ -394,12 +403,26 @@ class MainWindow(object):
         for element in self.last_calculations_list:
             if tmp == element.__str__():
                 self.actual_ls = element
+                self.input.setText(element.__str__())
+                self.input.setReadOnly(True)
+                self.add_list_button.setCheckable(False)
 
     @staticmethod
     def no_item_selected_error():
         message = QMessageBox()
         message.setWindowTitle('Select a list!')
         message.setText("No list have been chosen by you! Please select one!")
+        message.setIcon(QMessageBox.Warning)
+        message.exec()
+
+    @staticmethod
+    def already_exists_error():
+        message = QMessageBox()
+        message.setWindowTitle('List already exists!')
+        message.setText("This list already have been added to your database.\n"
+                        "There are few things you can do:\n"
+                        "   - your can recall it by clicking on it\n"
+                        "   - you can clear this input and try to add a new one.")
         message.setIcon(QMessageBox.Warning)
         message.exec()
 
