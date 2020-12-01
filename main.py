@@ -1,6 +1,6 @@
 from PyQt5.QtCore import (QCoreApplication, QRect, QMetaObject, Qt)
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QFont
 import backend
 import sys
 from exeptions import *
@@ -95,7 +95,11 @@ class MainWindow(object):
 
         self.clear_database_button = QPushButton(self.central_widget)
         self.clear_database_button.setObjectName('clear_list_button')
-        self.clear_database_button.setGeometry(20, 570, 360, 25)
+        self.clear_database_button.setGeometry(20, 570, 170, 25)
+
+        self.remove_ls_button = QPushButton(self.central_widget)
+        self.remove_ls_button.setObjectName('remove_ls_button')
+        self.remove_ls_button.setGeometry(210, 570, 170, 25)
 
         self.result = QLineEdit(self.container)
         self.result.setGeometry(0, 0, 360, 160)
@@ -132,6 +136,7 @@ class MainWindow(object):
         self.extent.clicked.connect(self.calculate_extent)
         self.clear_result_button.clicked.connect(self.clear_result)
         self.clear_database_button.clicked.connect(self.clear_database)
+        self.remove_ls_button.clicked.connect(self.remove_ls_from_database)
 
     def retranslate(self, main_window):
         main_window.setWindowTitle(QCoreApplication.translate('main_window', 'Statistics'))
@@ -149,6 +154,7 @@ class MainWindow(object):
         self.min.setText(QCoreApplication.translate('main_window', 'Min'))
         self.extent.setText(QCoreApplication.translate('main_window', 'Extent'))
         self.clear_database_button.setText(QCoreApplication.translate('main_window', 'Clear database'))
+        self.remove_ls_button.setText(QCoreApplication.translate('main_window', 'Remove item'))
         self.clear_result_button.setText(QCoreApplication.translate('main_window', 'Clear'))
 
     def upload(self):
@@ -208,48 +214,46 @@ class MainWindow(object):
     def add_list(self):
         input_list = self.input.text()[:-1]
         ls = []
-        if not self.add_list_button.isCheckable():
-            self.already_exists_error()
-        else:
-            try:
-                if input_list != '':
-                    input_list = input_list.split(';')
-                    for element in input_list:
+        try:
+            if input_list != '':
+                input_list = input_list.split(';')
+                for element in input_list:
+                    if element != '':
                         test_element = StringToFloat(element)
                         if not test_element.is_float():
                             unusable_element = element
                             raise ElementIsNotUsable
                         else:
                             ls.append(float(element))
-                    if len(ls) != 0:
-                        new_item = backend.List(ls)
-                        is_in_list = False
-                        for element in self.last_calculations_list:
-                            if new_item.__str__() == element.__str__():
-                                is_in_list = True
-                        if not is_in_list:
-                            self.last_calculations_list.append(new_item)
-                            self.save_to_file()
-                            self.reload_data()
-                        else:
-                            self.already_exists_error()
+                if len(ls) != 0:
+                    new_item = backend.List(ls)
+                    is_in_list = False
+                    for element in self.last_calculations_list:
+                        if new_item.__str__() == element.__str__():
+                            is_in_list = True
+                    if not is_in_list:
+                        self.last_calculations_list.append(new_item)
+                        self.save_to_file()
+                        self.reload_data()
                     else:
-                        raise EmptyListError
+                        self.already_exists_error()
                 else:
                     raise EmptyListError
-            except ElementIsNotUsable:
-                message = QMessageBox()
-                message.setWindowTitle('Unusable item!')
-                message.setText("One of the inserted items ({}) can't be "
-                                "used so it must to be removed!".format(unusable_element))
-                message.setIcon(QMessageBox.Warning)
-                message.exec()
-            except EmptyListError:
-                message = QMessageBox()
-                message.setWindowTitle('No usable data found!')
-                message.setText("There weren't usable elements in the .txt file!")
-                message.setIcon(QMessageBox.Warning)
-                message.exec()
+            else:
+                raise EmptyListError
+        except ElementIsNotUsable:
+            message = QMessageBox()
+            message.setWindowTitle('Unusable item!')
+            message.setText("One of the inserted items ({}) can't be "
+                            "used so it must to be removed!".format(unusable_element))
+            message.setIcon(QMessageBox.Warning)
+            message.exec()
+        except EmptyListError:
+            message = QMessageBox()
+            message.setWindowTitle('No usable data found!')
+            message.setText("There weren't usable elements in the input!")
+            message.setIcon(QMessageBox.Warning)
+            message.exec()
 
     def clear_list(self):
         self.input.clear()
@@ -404,8 +408,20 @@ class MainWindow(object):
             if tmp == element.__str__():
                 self.actual_ls = element
                 self.input.setText(element.__str__())
-                self.input.setReadOnly(True)
-                self.add_list_button.setCheckable(False)
+
+    def remove_ls_from_database(self):
+        try:
+            if not isinstance(self.actual_ls, backend.List):
+                raise UnselectedItemError
+        except UnselectedItemError:
+            self.no_item_selected_error()
+        else:
+            for element in self.last_calculations_list:
+                if element.__str__() == self.actual_ls.__str__():
+                    self.last_calculations_list.remove(self.actual_ls)
+            self.save_to_file()
+            self.reload_data()
+            self.actual_ls = []
 
     @staticmethod
     def no_item_selected_error():
