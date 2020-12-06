@@ -1,9 +1,26 @@
 from PyQt5.QtCore import (QCoreApplication, QRect, QMetaObject, Qt)
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtGui import QIcon, QPixmap
 import backend
 import sys
 from exeptions import *
+from os import remove
+from glob import glob
+
+
+class HistogramWindow(QWidget):
+
+    def __init__(self, picture, parent=None):
+        super(HistogramWindow, self).__init__(parent)
+        self.setWindowTitle('Histogram')
+        self.setWindowIcon(QIcon('statistics.png'))
+        label = QLabel(self)
+        picture = QPixmap(picture)
+        label.setPixmap(picture)
+        self.resize(picture.width(), picture.height())
+
+    def close_event(self, event):
+        event.ignore()
 
 
 class MainWindow(object):
@@ -40,10 +57,6 @@ class MainWindow(object):
         self.upper_quartile.setObjectName('upper_quartile')
         self.upper_quartile.setGeometry(QRect(0, 235, 170, 25))
 
-        self.median_quartile = QPushButton(self.container)
-        self.median_quartile.setObjectName('median_quartile')
-        self.median_quartile.setGeometry(QRect(0, 270, 170, 25))
-
         self.lower_quartile = QPushButton(self.container)
         self.lower_quartile.setObjectName('lower_quartile')
         self.lower_quartile.setGeometry(QRect(0, 305, 170, 25))
@@ -60,9 +73,17 @@ class MainWindow(object):
         self.skewness.setObjectName('skewness')
         self.skewness.setGeometry(QRect(190, 235, 170, 25))
 
+        self.median_quartile = QPushButton(self.container)
+        self.median_quartile.setObjectName('median_quartile')
+        self.median_quartile.setGeometry(QRect(0, 270, 140, 25))
+
+        self.show_histogram_button = QPushButton(self.container)
+        self.show_histogram_button.setObjectName('show_histogram_button')
+        self.show_histogram_button.setGeometry(QRect(150, 265, 60, 35))
+
         self.max = QPushButton(self.container)
         self.max.setObjectName('max')
-        self.max.setGeometry(QRect(190, 270, 170, 25))
+        self.max.setGeometry(QRect(220, 270, 140, 25))
 
         self.min = QPushButton(self.container)
         self.min.setObjectName('min')
@@ -137,6 +158,7 @@ class MainWindow(object):
         self.clear_result_button.clicked.connect(self.clear_result)
         self.clear_database_button.clicked.connect(self.clear_database)
         self.remove_ls_button.clicked.connect(self.remove_ls_from_database)
+        self.show_histogram_button.clicked.connect(self.show_histogram)
 
     def retranslate(self, main_window):
         main_window.setWindowTitle(QCoreApplication.translate('main_window', 'Statistics'))
@@ -156,6 +178,7 @@ class MainWindow(object):
         self.clear_database_button.setText(QCoreApplication.translate('main_window', 'Clear database'))
         self.remove_ls_button.setText(QCoreApplication.translate('main_window', 'Remove item'))
         self.clear_result_button.setText(QCoreApplication.translate('main_window', 'Clear'))
+        self.show_histogram_button.setText(QCoreApplication.translate('main_window', 'Histogram'))
 
     def upload(self):
         url = str(QFileDialog.getOpenFileName())
@@ -184,6 +207,7 @@ class MainWindow(object):
                         if new_item.__str__() == element.__str__():
                             is_in_list = True
                     if not is_in_list:
+                        new_item.create_histogram()
                         self.last_calculations_list.append(new_item)
                         self.save_to_file()
                         self.reload_data()
@@ -232,6 +256,7 @@ class MainWindow(object):
                         if new_item.__str__() == element.__str__():
                             is_in_list = True
                     if not is_in_list:
+                        new_item.create_histogram()
                         self.last_calculations_list.append(new_item)
                         self.save_to_file()
                         self.reload_data()
@@ -267,7 +292,26 @@ class MainWindow(object):
         file = open('database.txt', 'w')
         file.write('')
         file.close()
+        images = glob('plots/*')
+        for image in images:
+            remove(image)
         self.reload_data()
+
+    def show_histogram(self):
+        if not self.actual_ls == []:
+            picture = 'plots/' + self.actual_ls.__str__() + '.jpg'
+            self.ui = HistogramWindow(picture)
+            self.ui.show()
+        else:
+            return self.no_item_selected_error()
+
+    def close_event(self, event):
+        widget_list = QApplication.topLevelWidgets()
+        num_windows = len(widget_list)
+        if num_windows > 1:
+            event.accept()
+        else:
+            event.ignore()
 
     def calculate_average(self):
         try:
@@ -289,7 +333,7 @@ class MainWindow(object):
         else:
             quartiles = data.get_quartiles()
             for index in range(len(quartiles)):
-                if index == 0:
+                if index == 2:
                     self.result.setText(str(quartiles[index]))
 
     def calculate_median_quartile(self):
@@ -315,7 +359,7 @@ class MainWindow(object):
         else:
             quartiles = data.get_quartiles()
             for index in range(len(quartiles)):
-                if index == 2:
+                if index == 0:
                     self.result.setText(str(quartiles[index]))
 
     def calculate_dispersion(self):
@@ -419,6 +463,7 @@ class MainWindow(object):
             for element in self.last_calculations_list:
                 if element.__str__() == self.actual_ls.__str__():
                     self.last_calculations_list.remove(self.actual_ls)
+                    remove('plots/' + element.__str__() + '.jpg')
             self.save_to_file()
             self.reload_data()
             self.actual_ls = []

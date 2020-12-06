@@ -1,3 +1,6 @@
+from matplotlib import pyplot as plt
+
+
 class List:
 
     def __init__(self, ls):
@@ -64,3 +67,16 @@ class List:
 
     def get_extent(self):
         return float(self.get_max()) - float(self.get_min())
+
+    def create_histogram(self):
+        plt.hist(self.__list, color='#3a6b7e')
+        quartiles = self.get_quartiles()
+        quartiles_label = ['Lower quartile', 'Median quartile', 'Upper quartile']
+        for index in range(len(quartiles)):
+            colors = ['#ffa500', '#ff8c00', '#ff7f50']
+            plt.axvline(x=quartiles[index], color=colors[index])
+        plt.title('Histogram for the actual list:')
+        plt.xlabel('Numbers')
+        plt.ylabel('Number of incidences')
+        plt.legend(quartiles_label)
+        plt.savefig('plots/' + self.__str__() + '.jpg', dpi=100)
