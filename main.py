@@ -125,7 +125,7 @@ class MainWindow(object):
         self.result = QLineEdit(self.container)
         self.result.setGeometry(0, 0, 360, 160)
         self.result.setReadOnly(True)
-        self.result.setStyleSheet('font-size: 18pt; line-break: break-word;')
+        self.result.setStyleSheet('font-size: 18pt;')
 
         self.clear_result_button = QPushButton(self.container)
         self.clear_result_button.setObjectName('clear_result_button')
